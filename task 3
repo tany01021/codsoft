@@ -1,0 +1,157 @@
+import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Scanner;
+
+
+class Student implements Serializable {
+    private String name;
+    private String rollNumber;
+    private String grade;
+
+    public Student(String name, String rollNumber, String grade) {
+        this.name = name;
+        this.rollNumber = rollNumber;
+        this.grade = grade;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getRollNumber() {
+        return rollNumber;
+    }
+
+    public String getGrade() {
+        return grade;
+    }
+
+    @Override
+    public String toString() {
+        return "Name: " + name + ", Roll Number: " + rollNumber + ", Grade: " + grade;
+    }
+}
+
+
+class StudentManagementSystem {
+    private List<Student> students;
+    private final String storageFile = "students.dat";
+
+    public StudentManagementSystem() {
+        this.students = new ArrayList<>();
+        loadStudents();
+    }
+
+    public void addStudent(Student student) {
+        students.add(student);
+        saveStudents();
+    }
+
+    public void removeStudent(String rollNumber) {
+        students.removeIf(s -> s.getRollNumber().equals(rollNumber));
+        saveStudents();
+    }
+
+    public Student searchStudent(String rollNumber) {
+        for (Student student : students) {
+            if (student.getRollNumber().equals(rollNumber)) {
+                return student;
+            }
+        }
+        return null;
+    }
+
+    public void displayAllStudents() {
+        for (Student student : students) {
+            System.out.println(student);
+        }
+    }
+
+    private void saveStudents() {
+        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(storageFile))) {
+            oos.writeObject(students);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void loadStudents() {
+        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(storageFile))) {
+            students = (List<Student>) ois.readObject();
+        } catch (FileNotFoundException e) {
+            // File not found, start with an empty list
+            students = new ArrayList<>();
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+
+public class StudentManagementSystemApp {
+
+    private static String getNonEmptyInput(Scanner scanner, String prompt) {
+        String value;
+        do {
+            System.out.print(prompt);
+            value = scanner.nextLine().trim();
+            if (value.isEmpty()) {
+                System.out.println("This field cannot be empty.");
+            }
+        } while (value.isEmpty());
+        return value;
+    }
+
+    public static void main(String[] args) {
+        StudentManagementSystem system = new StudentManagementSystem();
+        Scanner scanner = new Scanner(System.in);
+
+        while (true) {
+            System.out.println("\nStudent Management System");
+            System.out.println("1. Add a new student");
+            System.out.println("2. Remove a student");
+            System.out.println("3. Search for a student");
+            System.out.println("4. Display all students");
+            System.out.println("5. Exit");
+
+            System.out.print("Enter your choice: ");
+            String choice = scanner.nextLine();
+
+            switch (choice) {
+                case "1":
+                    String name = getNonEmptyInput(scanner, "Enter student's name: ");
+                    String rollNumber = getNonEmptyInput(scanner, "Enter student's roll number: ");
+                    String grade = getNonEmptyInput(scanner, "Enter student's grade: ");
+                    Student student = new Student(name, rollNumber, grade);
+                    system.addStudent(student);
+                    System.out.println("Student added successfully.");
+                    break;
+                case "2":
+                    rollNumber = getNonEmptyInput(scanner, "Enter the roll number of the student to remove: ");
+                    system.removeStudent(rollNumber);
+                    System.out.println("Student removed successfully.");
+                    break;
+                case "3":
+                    rollNumber = getNonEmptyInput(scanner, "Enter the roll number of the student to search for: ");
+                    Student searchedStudent = system.searchStudent(rollNumber);
+                    if (searchedStudent != null) {
+                        System.out.println("Student found: ");
+                        System.out.println(searchedStudent);
+                    } else {
+                        System.out.println("Student not found.");
+                    }
+                    break;
+                case "4":
+                    system.displayAllStudents();
+                    break;
+                case "5":
+                    System.out.println("Exiting the system.");
+                    scanner.close();
+                    return;
+                default:
+                    System.out.println("Invalid choice, please try again.");
+            }
+        }
+    }
+}
